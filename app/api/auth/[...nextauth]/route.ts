@@ -6,58 +6,57 @@ const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: "Credentials",
+
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
+
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        try {
-          // Call your backend login endpoint
-          const res = await authApi.post("/token/", {
-            email: credentials.email,
-            password: credentials.password,
-          });
+        const res = await authApi.post("/token/", {
+          email: credentials.email,
+          password: credentials.password,
+        });
 
-          const { access, refresh } = res.data;
+        const { access, refresh } = res.data;
 
-          if (!access || !refresh) return null;
+        if (!access) return null;
 
-          // ✅ Only return safe user info
-          return {
-            id: credentials.email,
-            email: credentials.email,
-          };
-        } catch (err: any) {
-          console.error("Login failed:", err.response?.data || err.message);
-          return null;
-        }
+        return {
+          id: credentials.email,
+          email: credentials.email,
+          accessToken: access,
+          refreshToken: refresh,
+        };
       },
     }),
   ],
 
-  // Use JWT strategy for session
   session: {
-    strategy: "jwt",       // tokens stay server-side
-    maxAge: 60 * 60,       // 1 hour
+    strategy: "jwt",
   },
 
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.email = user.email; // safe info only
+        token.email = user.email;
+        token.accessToken = user.accessToken;
+        token.refreshToken = user.refreshToken;
       }
       return token;
     },
+
     async session({ session, token }) {
-      session.user.email = token.email as string; // safe info only
+      session.user.email = token.email as string;
+      session.accessToken = token.accessToken as string;
       return session;
     },
   },
 
   pages: {
-    signIn: "/login",  // your login page
+    signIn: "/login",
   },
 
   secret: process.env.NEXTAUTH_SECRET,

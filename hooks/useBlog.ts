@@ -1,15 +1,12 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/axios";
+import { getBlogBySlug, Blog } from "@/api/blogs";
 
 export const useBlog = (slug: string) => {
-  return useQuery({
+  return useQuery<Blog, Error>({
     queryKey: ["blog", slug],
-    queryFn: async () => {
-      const res = await api.get(`/blogs/${slug}/`);
-      return res.data;
-    },
-    enabled: !!slug,
+    queryFn: () => getBlogBySlug(slug),
+    enabled: !!slug, // only fetch if slug exists
   });
 };

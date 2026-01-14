@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 
@@ -27,15 +27,23 @@ const Navbar = () => {
             <Link href="/blogs" className="hover:text-blue-600">
               Blogs
             </Link>
-            <Link href="/categories" className="hover:text-blue-600">
-              Categories
-            </Link>
+           
             <Link href="/about" className="hover:text-blue-600">
               About
             </Link>
             <Link href="/contact" className="hover:text-blue-600">
               Contact
             </Link>
+
+            {/* Dashboard link for logged-in users */}
+            {user && (
+              <Link
+                href="/dashboard"
+                className="hover:text-blue-600 font-semibold"
+              >
+                Dashboard
+              </Link>
+            )}
           </div>
 
           {/* Desktop User Auth */}
@@ -78,15 +86,23 @@ const Navbar = () => {
             <Link href="/blogs" className="block hover:text-blue-600">
               Blogs
             </Link>
-            <Link href="/categories" className="block hover:text-blue-600">
-              Categories
-            </Link>
+            
             <Link href="/about" className="block hover:text-blue-600">
               About
             </Link>
             <Link href="/contact" className="block hover:text-blue-600">
               Contact
             </Link>
+
+            {/* Dashboard link for logged-in users */}
+            {user && (
+              <Link
+                href="/dashboard"
+                className="block hover:text-blue-600 font-semibold"
+              >
+                Dashboard
+              </Link>
+            )}
 
             {/* Mobile User Auth */}
             {status === "loading" ? (

@@ -7,10 +7,12 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
 
     const res = await signIn("credentials", {
       email,
@@ -18,8 +20,13 @@ export default function LoginPage() {
       redirect: false,
     });
 
-    if (res?.ok) router.push("/blogs");
-    else alert("Login failed");
+    setLoading(false);
+
+    if (res?.ok) {
+      router.push("/blogs");
+    } else {
+      alert("Invalid email or password");
+    }
   };
 
   return (
@@ -29,18 +36,27 @@ export default function LoginPage() {
       <input
         type="email"
         placeholder="Email"
+        required
         className="border p-2 w-full"
+        value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
 
       <input
         type="password"
         placeholder="Password"
+        required
         className="border p-2 w-full"
+        value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <button className="bg-blue-600 text-white px-4 py-2 w-full">Login</button>
+      <button
+        disabled={loading}
+        className="bg-blue-600 text-white px-4 py-2 w-full disabled:opacity-50"
+      >
+        {loading ? "Logging in..." : "Login"}
+      </button>
     </form>
   );
 }

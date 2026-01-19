@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useBlogs } from "@/hooks/useBlogs"; // make sure this points to your hook
-import { Blog } from "@/api/blogs"; // import Blog type
+import { useBlogs } from "@/hooks/useBlogs";
+import { Blog } from "@/api/blogs";
+
 
 export default function BlogPage() {
-  const { data, isLoading, error } = useBlogs(); // data is Blog[]
+  const { data, isLoading, error } = useBlogs();
 
   if (isLoading) return <p className="p-6">Loading blogs...</p>;
   if (error) return <p className="p-6">Failed to load blogs: {error.message}</p>;
@@ -20,7 +21,7 @@ export default function BlogPage() {
         {data.map((post: Blog) => (
           <div
             key={post.id}
-            className="border rounded-lg shadow overflow-hidden flex flex-col bg-white"
+            className="border rounded-2xl shadow-lg overflow-hidden flex flex-col bg-white transition-transform duration-300 hover:scale-105"
           >
             {/* Image */}
             {post.featured_image && (
@@ -30,26 +31,27 @@ export default function BlogPage() {
                   alt={post.title_en}
                   fill
                   className="object-cover object-top"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                 />
               </div>
             )}
 
             {/* Content */}
-            <div className="p-4 flex-1 flex flex-col">
+            <div className="p-4 flex flex-col flex-1">
               <h2 className="text-xl font-semibold mb-2 line-clamp-2">
                 {post.title_en}
               </h2>
 
               {post.excerpt_en && (
-                <p className="text-gray-600 flex-1 line-clamp-3 mb-2">
+                <p className="text-gray-600 flex-1 mb-4 line-clamp-3">
                   {post.excerpt_en}
                 </p>
               )}
 
               <div className="mt-auto">
                 <Link
-                  href={`/blogs/${post.slug}`} // use id if slug not present
-                  className="text-blue-600 hover:underline"
+                  href={`/blogs/${post.slug}`}
+                  className="text-blue-600 hover:underline font-medium"
                 >
                   Read More →
                 </Link>

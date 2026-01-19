@@ -1,12 +1,12 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import authApi from "@/lib/axiosAuth";
+import { refreshAccessToken } from "@/lib/refreshToken";
 
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: "Credentials",
-
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
@@ -22,43 +22,51 @@ const handler = NextAuth({
 
         const { access, refresh } = res.data;
 
-        if (!access) return null;
-
         return {
           id: credentials.email,
           email: credentials.email,
           accessToken: access,
           refreshToken: refresh,
+          accessTokenExpires: Date.now() + 10 * 1000, // 10 seconds
         };
       },
     }),
   ],
 
-  session: {
-    strategy: "jwt",
-  },
+  session: { strategy: "jwt" },
 
   callbacks: {
     async jwt({ token, user }) {
+      // First login
       if (user) {
-        token.email = user.email;
-        token.accessToken = user.accessToken;
-        token.refreshToken = user.refreshToken;
+        return {
+          id: user.id,
+          accessToken: user.accessToken,
+          refreshToken: user.refreshToken,
+          accessTokenExpires: user.accessTokenExpires,
+          email: user.email,
+        };
       }
-      return token;
+
+      // Token still valid
+      if (Date.now() < (token.accessTokenExpires ?? 0)) {
+        return token;
+      }
+
+      // Token expired → refresh
+      return await refreshAccessToken(token);
     },
 
     async session({ session, token }) {
+      session.accessToken = token.accessToken;
+      session.error = token.error;
+      session.user.id = token.id as string;
       session.user.email = token.email as string;
-      session.accessToken = token.accessToken as string;
       return session;
     },
   },
 
-  pages: {
-    signIn: "/login",
-  },
-
+  pages: { signIn: "/login" },
   secret: process.env.NEXTAUTH_SECRET,
 });
 

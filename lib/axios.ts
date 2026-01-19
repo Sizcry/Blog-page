@@ -1,3 +1,4 @@
+// lib/axios.ts
 import axios from "axios";
 import { getSession } from "next-auth/react";
 
@@ -5,16 +6,24 @@ const api = axios.create({
   baseURL: "https://janadesh.gowell.edu.np/api/v1",
 });
 
-// Add token automatically to all requests
-api.interceptors.request.use(async (config) => {
-  const session = await getSession();
+api.interceptors.request.use(
+  async (config) => {
+    const session = await getSession();
 
-  if (session && session.accessToken) {
-    config.headers.Authorization = `Bearer ${session.accessToken}`;
-  }
+    if (session?.accessToken) {
+      // Ensure headers exist
+      if (!config.headers) {
+        // ✅ don't assign {}, instead cast an empty AxiosHeaders object
+        config.headers = {} as any;
+      }
 
-  // Do NOT set Content-Type; axios handles FormData automatically
-  return config;
-});
+      // Set Authorization safely
+      (config.headers as Record<string, string>)["Authorization"] = `Bearer ${session.accessToken}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export default api;

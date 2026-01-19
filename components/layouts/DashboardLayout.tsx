@@ -30,8 +30,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [blogsOpen, setBlogsOpen] = useState(false);
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <SidebarProvider defaultOpen={true} >
+      <div className="flex min-h-screen bg-linear-to-br from-slate-50 w-full via-blue-50  to-indigo-50">
         {/* Sidebar */}
         <Sidebar className="border-r border-slate-200/60 bg-white/80 backdrop-blur-xl shadow-xl">
           <SidebarHeader className="border-b border-slate-200/60 p-6">
@@ -55,7 +55,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <span className="font-bold text-xl bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   Dashboard
                 </span>
-                <p className="text-xs text-slate-500 font-medium">Content Management</p>
+                <p className="text-xs text-slate-500 font-medium">
+                  Content Management
+                </p>
               </div>
             </div>
           </SidebarHeader>
@@ -121,7 +123,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         asChild
                         className="pl-11 py-2.5 rounded-lg hover:bg-blue-50 text-slate-600 hover:text-blue-700 transition-all duration-200"
                       >
-                        <Link href="/dashboard/blogs" className="flex items-center gap-2">
+                        <Link
+                          href="/dashboard/blogs"
+                          className="flex items-center gap-2"
+                        >
                           <span className="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
                           View Blogs
                         </Link>
@@ -133,16 +138,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         asChild
                         className="pl-11 py-2.5 rounded-lg hover:bg-blue-50 text-slate-600 hover:text-blue-700 transition-all duration-200"
                       >
-                        <Link href="/dashboard/blogs/new" className="flex items-center gap-2">
+                        <Link
+                          href="/dashboard/blogs/new"
+                          className="flex items-center gap-2"
+                        >
                           <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
                           Add Blog
                         </Link>
                       </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
-
-                   
-
-                   
                   </SidebarMenuSub>
                 </div>
               </SidebarMenuItem>
@@ -154,7 +158,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     asChild
                     className="px-4 py-3 rounded-xl hover:bg-linear-to-r hover:from-slate-50 hover:to-slate-100 transition-all duration-300 group"
                   >
-                    <Link href="/" className="w-full flex items-center gap-3">
+                    <Link
+                      href="/"
+                      className="w-full flex items-center gap-3"
+                    >
                       <div className="w-8 h-8 rounded-lg bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <svg
                           className="w-4 h-4 text-slate-600"
@@ -185,7 +192,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             {user && (
               <div className="space-y-3">
                 <div className="px-4 py-3 rounded-xl bg-linear-to-br from-slate-50 to-slate-100 border border-slate-200/60">
-                  <p className="text-xs font-medium text-slate-500 mb-1">Signed in as</p>
+                  <p className="text-xs font-medium text-slate-500 mb-1">
+                    Signed in as
+                  </p>
                   <p className="text-sm font-semibold text-slate-700 truncate">
                     {user.email || user.name || "User"}
                   </p>
@@ -219,13 +228,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </Sidebar>
 
         {/* Main Content */}
-        <SidebarInset className="p-8 flex-1">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8 min-h-[calc(100vh-4rem)] transition-all duration-300 hover:shadow-2xl">
-              {children}
-            </div>
-          </div>
-        </SidebarInset>
+      <SidebarInset className="flex-1 p-8  mx-auto">
+  <div className="w-full h-full ">
+    <div className="w-full h-full backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
+      {children}
+    </div>
+  </div>
+</SidebarInset>
+
       </div>
     </SidebarProvider>
   );

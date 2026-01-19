@@ -14,6 +14,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import DashboardLayout from "@/components/layouts/DashboardLayout";
 import api from "@/lib/axios";
+import { Pencil, Trash2, Calendar, Eye } from "lucide-react";
 
 // Blog interface
 interface Blog {
@@ -22,6 +23,7 @@ interface Blog {
   slug: string;
   status: string;
   featured_image?: string;
+  created_at?: string;
 }
 
 // DRF paginated response interface
@@ -70,10 +72,22 @@ export default function DashboardBlogsPage() {
     }
   };
 
-  const getImageUrl = (image?: string) => {
-    if (!image) return null;
-    // If API returns relative path, prepend base URL
+  // Helper: get image URL or undefined
+  const getImageUrl = (image?: string): string | undefined => {
+    if (!image) return undefined;
     return image.startsWith("http") ? image : `https://janadesh.gowell.edu.np${image}`;
+  };
+
+  // Status badge color
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "published":
+        return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      case "draft":
+        return "bg-amber-100 text-amber-700 border-amber-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
   };
 
   return (
@@ -109,37 +123,78 @@ export default function DashboardBlogsPage() {
             No blogs found. Click "Add New Blog" to create one.
           </p>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {blogs.map((blog) => (
               <div
                 key={blog.id}
-                className="border rounded-xl p-4 bg-white shadow hover:shadow-lg transition"
+                className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-indigo-200 hover:-translate-y-1"
               >
-                {getImageUrl(blog.featured_image) && (
-                  <img
-                    src={getImageUrl(blog.featured_image)!}
-                    alt={blog.title_en}
-                    className="w-full h-40 object-cover rounded"
-                  />
-                )}
-                <h2 className="text-lg font-bold mt-2">{blog.title_en}</h2>
-                <p className="text-sm text-gray-500 capitalize">{blog.status}</p>
+                {/* Image container */}
+                <div className="relative h-48 overflow-hidden bg-linear-to-br from-indigo-100 to-purple-100">
+                  {getImageUrl(blog.featured_image) ? (
+                    <img
+                      src={getImageUrl(blog.featured_image)}
+                      alt={blog.title_en}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Eye className="w-12 h-12 text-indigo-300 animate-pulse" />
+                    </div>
+                  )}
 
-                <div className="mt-4 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push(`/dashboard/blogs/${blog.id}/edit`)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDelete(blog.id)}
-                  >
-                    Delete
-                  </Button>
+                  {/* Status badge */}
+                  <div className="absolute top-3 right-3">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
+                        blog.status
+                      )} backdrop-blur-sm`}
+                    >
+                      {blog.status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-5 flex flex-col justify-between h-52">
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                      {blog.title_en}
+                    </h2>
+
+                    {blog.created_at && (
+                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                        <Calendar className="w-4 h-4 text-gray-400" />
+                        <span>
+                          {new Date(blog.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 mt-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        router.push(`/dashboard/blogs/${blog.slug}/edit`)
+                      }
+                      className="flex-1 flex items-center justify-center gap-2 hover:bg-indigo-50"
+                    >
+                      <Pencil className="w-4 h-4" />
+                      <span className="hidden sm:inline">Edit</span>
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(blog.id)}
+                      className="flex-1 flex items-center justify-center gap-2 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span className="hidden sm:inline">Delete</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}

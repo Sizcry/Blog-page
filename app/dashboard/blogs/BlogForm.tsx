@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import api from "@/lib/axios";
 import { useSession } from "next-auth/react";
-
+import { getBlogBySlug, createBlog, updateBlog } from "@/api/blogs";
 
 interface BlogFormProps {
   mode: "new" | "edit";
-  blogId?: string;
+  blogId?: string; // slug
 }
 
 export default function BlogForm({ mode, blogId }: BlogFormProps) {
@@ -35,20 +34,26 @@ export default function BlogForm({ mode, blogId }: BlogFormProps) {
 
   // Load blog for edit
   useEffect(() => {
-    if (mode === "edit" && blogId) {
-      api.get(`/blogs/${blogId}/`).then((res) => {
-        const blog = res.data;
-        setTitleEn(blog.title_en);
-        setTitleNp(blog.title_np);
-        setContentEn(blog.content_en);
-        setContentNp(blog.content_np);
-        setExcerptEn(blog.excerpt_en);
-        setExcerptNp(blog.excerpt_np);
-        setStatus(blog.status);
-        if (blog.featured_image) setPreview(blog.featured_image);
-      });
+    if (mode === "edit" && blogId && session?.accessToken) {
+      const fetchBlog = async () => {
+        try {
+          const blog = await getBlogBySlug(blogId);
+          setTitleEn(blog.title_en);
+          setTitleNp(blog.title_np);
+          setContentEn(blog.content_en);
+          setContentNp(blog.content_np);
+          setExcerptEn(blog.excerpt_en || "");
+          setExcerptNp(blog.excerpt_np || "");
+          setStatus(blog.status);
+          if (blog.featured_image) setPreview(blog.featured_image);
+        } catch (err: any) {
+          console.error("Failed to load blog:", err);
+          alert("Failed to load blog. Check console for details.");
+        }
+      };
+      fetchBlog();
     }
-  }, [mode, blogId]);
+  }, [mode, blogId, session]);
 
   // Preview selected image
   useEffect(() => {
@@ -79,13 +84,12 @@ export default function BlogForm({ mode, blogId }: BlogFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    if (!session) {
+    if (!session?.accessToken) {
       alert("You must be logged in to create or edit blogs");
-      setLoading(false);
       return;
     }
+
+    setLoading(true);
 
     try {
       const formData = new FormData();
@@ -99,16 +103,10 @@ export default function BlogForm({ mode, blogId }: BlogFormProps) {
       formData.append("slug", generateSlug(titleEn));
       if (featuredImage) formData.append("featured_image", featuredImage);
 
-      // Let axios set Content-Type automatically
-      const headers = {
-        Authorization: `Bearer ${session.accessToken || ""}`,
-        
-      };
-      console.log('accesstoken', session.accessToken);
       if (mode === "new") {
-        await api.post("/blogs/", formData, { headers });
+        await createBlog(formData);
       } else if (mode === "edit" && blogId) {
-        await api.put(`/blogs/${blogId}/`, formData, { headers });
+        await updateBlog(blogId, formData);
       }
 
       router.push("/dashboard/blogs");
@@ -125,7 +123,7 @@ export default function BlogForm({ mode, blogId }: BlogFormProps) {
 
   return (
     <div
-      className={`max-w-4xl mx-auto transition-all duration-1000 ${
+      className={`w-full transition-all duration-1000 ${
         mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
       }`}
     >
@@ -133,8 +131,18 @@ export default function BlogForm({ mode, blogId }: BlogFormProps) {
       <div className="mb-8 space-y-2">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            <svg
+              className="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
             </svg>
           </div>
           <div>
@@ -149,30 +157,65 @@ export default function BlogForm({ mode, blogId }: BlogFormProps) {
       </div>
 
       {/* Form */}
-      <form className="space-y-6" onSubmit={handleSubmit}>
+      <form className="space-y-6 w-full" onSubmit={handleSubmit}>
         {/* English Section */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8 space-y-6">
+        <div className="w-full bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8 space-y-6">
           <h2 className="text-xl font-bold text-slate-700">English Content</h2>
-          <Input placeholder="Enter blog title in English" value={titleEn} onChange={(e) => setTitleEn(e.target.value)} required />
-          <Input placeholder="Brief description (optional)" value={excerptEn} onChange={(e) => setExcerptEn(e.target.value)} />
-          <Textarea placeholder="Write your blog content in English" value={contentEn} onChange={(e) => setContentEn(e.target.value)} required rows={6} />
+          <Input
+            placeholder="Enter blog title in English"
+            value={titleEn}
+            onChange={(e) => setTitleEn(e.target.value)}
+            required
+          />
+          <Input
+            placeholder="Brief description (optional)"
+            value={excerptEn}
+            onChange={(e) => setExcerptEn(e.target.value)}
+          />
+          <Textarea
+            placeholder="Write your blog content in English"
+            value={contentEn}
+            onChange={(e) => setContentEn(e.target.value)}
+            required
+            rows={6}
+          />
         </div>
 
         {/* Nepali Section */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8 space-y-6">
+        <div className="w-full bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8 space-y-6">
           <h2 className="text-xl font-bold text-slate-700">नेपाली सामग्री</h2>
-          <Input placeholder="नेपालीमा ब्लग शीर्षक प्रविष्ट गर्नुहोस्" value={titleNp} onChange={(e) => setTitleNp(e.target.value)} required />
-          <Input placeholder="संक्षिप्त विवरण (वैकल्पिक)" value={excerptNp} onChange={(e) => setExcerptNp(e.target.value)} />
-          <Textarea placeholder="आफ्नो ब्लग सामग्री नेपालीमा लेख्नुहोस्" value={contentNp} onChange={(e) => setContentNp(e.target.value)} required rows={6} />
+          <Input
+            placeholder="नेपालीमा ब्लग शीर्षक प्रविष्ट गर्नुहोस्"
+            value={titleNp}
+            onChange={(e) => setTitleNp(e.target.value)}
+            required
+          />
+          <Input
+            placeholder="संक्षिप्त विवरण (वैकल्पिक)"
+            value={excerptNp}
+            onChange={(e) => setExcerptNp(e.target.value)}
+          />
+          <Textarea
+            placeholder="आफ्नो ब्लग सामग्री नेपालीमा लेख्नुहोस्"
+            value={contentNp}
+            onChange={(e) => setContentNp(e.target.value)}
+            required
+            rows={6}
+          />
         </div>
 
         {/* Media & Settings */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8 space-y-6">
+        <div className="w-full bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-8 space-y-6">
           <h2 className="text-xl font-bold text-slate-700">Media & Settings</h2>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full p-3 rounded-xl border">
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="w-full p-3 rounded-xl border"
+          >
             <option value="published">✅ Published</option>
             <option value="draft">📝 Draft</option>
           </select>
+
           <div
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -182,18 +225,34 @@ export default function BlogForm({ mode, blogId }: BlogFormProps) {
               dragActive ? "border-purple-500 bg-purple-50" : "border-slate-300 bg-slate-50/50"
             }`}
           >
-            <input type="file" accept="image/*" onChange={(e) => setFeaturedImage(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setFeaturedImage(e.target.files?.[0] || null)}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
             <p>Drop your image here or click to browse</p>
-            {preview && <img src={preview} alt="Preview" className="w-full h-64 object-cover mt-4 rounded-xl" />}
+            {preview && (
+              <img
+                src={preview}
+                alt="Preview"
+                className="w-full h-64 object-cover mt-4 rounded-xl"
+              />
+            )}
           </div>
         </div>
 
         {/* Buttons */}
-        <div className="flex gap-4 pt-4">
-          <Button type="button" variant="outline" onClick={() => router.push("/dashboard/blogs")}>
+        <div className="flex flex-col sm:flex-row gap-4 pt-4 w-full">
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={() => router.push("/dashboard/blogs")}
+          >
             Cancel
           </Button>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" className="flex-1" disabled={loading}>
             {loading ? "Saving..." : mode === "new" ? "Publish Blog" : "Update Blog"}
           </Button>
         </div>
